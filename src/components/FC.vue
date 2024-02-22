@@ -1,20 +1,13 @@
 <template>
   <div class="file-system">
-    <Loader v-if="isLoading" />
+    <Loader v-if="FSStore.isLoadingFS" />
     <template v-else>
-      <template v-if="responseYaDisk">
-        <h1
-          class="file-system__title"
-          @click="back"
-        >
-          {{ currentFolder }}
-        </h1>
+      <template v-if="FSStore.FSData">
         <div class="file-system__content">
           <FCItem
-              v-for="(item, index) in responseYaDisk"
+              v-for="(item, index) in FSStore.FSData"
               :key="index"
               :params="item"
-              @click="click"
           ></FCItem>
         </div>
       </template>
@@ -28,58 +21,45 @@
 <script setup lang="ts">
 import FCItem from "./FCItem.vue";
 import Loader from "./Loader.vue";
-
-const emit = defineEmits(['click', 'back'])
-
-defineProps<{
-  isLoading: boolean
-  currentFolder: string
-  responseYaDisk: Array
-}>()
-
-function click(val) {
-  emit('click', val)
-}
-
-function back() {
-  emit('back')
-}
+import { useFSStore } from "../stores/FS";
+const FSStore = useFSStore();
 </script>
 
 <style scoped lang="scss">
 .file-system {
   display: flex;
   flex-direction: column;
-  height: 400px;
   gap: 10px;
+  height: 100%;
+  background-color: #3a3a3a;
+  color: #fff;
+  padding: 20px 4px 0 20px;
+  border-radius: 10px;
+  overflow: hidden;
+
+  &__header {
+    padding-bottom: 10px;
+    color: #fff;
+  }
 
   &__title {
-    white-space: nowrap;
-    text-overflow: ellipsis;
+    display: flex;
+    align-items: center;
+    font-size: 20px;
+    font-weight: 700;
+  }
+
+  &__quick-stats {
+    font-size: 14px;
+    margin-left: auto;
   }
 
   &__content {
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    overflow: auto;
-    padding-right: 10px;
-
-    &::-webkit-scrollbar {
-      width: 5px;
-    }
-
-    &::-webkit-scrollbar-track {
-      box-shadow: inset 0 0 6px #494949;
-    }
-
-    &::-webkit-scrollbar-thumb {
-      background-color: #646464;
-    }
-  }
-
-  &__empty {
-    margin: auto;
+    gap: 5px;
+    overflow-y: scroll;
+    padding-right: 6px;
   }
 }
 </style>

@@ -1,32 +1,40 @@
 <template>
-  <div @click="click" class="file-system__item">
+  <div class="file-system-item">
     <div
-      class="file-system__name"
+      class="file-system-item__name"
       :class="{'is-directory': isDirectory(params.type)}"
+      tabindex="0"
+      @dblclick.self="dbclick"
     >
-      <span
-        v-if="isDirectory(params.type)"
-        class="file-system__type"
-      >
-        /
-      </span>
-      <span
-        v-if="params.preview"
-        class="file-system__preview"
-      >
+      <span class="file-system-item__type">
         <img
-          :src="params.preview"
-          :alt="params.name"
+          v-if="isDirectory(params.type)"
+          src="../assets/folder-icon.svg"
+          alt="icon-folder"
+        >
+        <img
+          v-else
+          src="../assets/file-question-icon.svg"
+          alt="file-question-icon"
         >
       </span>
       {{ params.name }}
-      <span class="file-system__media-type">
-        {{ params.media_type }}
-      </span>
+      <div class="file-system-item__actions">
+        <VButton
+          v-if="isDirectory(params.type)"
+          :loading="FSStore.isLoadingNestedFiles && FSStore.nestedFilesPath === props.params.path"
+          @click="getNestedStats"
+        >
+          <img
+            src="../assets/statistic-board-icon.svg"
+            alt="statistic"
+          >
+        </VButton>
+      </div>
     </div>
     <div
       v-if="params.items"
-      class="file-system__subfolder"
+      class="file-system-item__subfolder"
     >
       <FCItem
         v-for="(item, index) in params.items"
@@ -38,7 +46,10 @@
 </template>
 
 <script setup lang="ts">
+import { useFSStore } from "../stores/FS";
+import VButton from "./VButton.vue";
 
+const FSStore = useFSStore();
 interface IFCItems {
   name: string
   path: string
@@ -48,31 +59,38 @@ interface IFCItems {
   items?: IFCItems[]
 }
 
-const emit = defineEmits(['click'])
-
 const props = defineProps<{
   params: IFCItems
 }>();
 
-function click() {
+function dbclick() {
   if (isDirectory(props.params.type)) {
-    emit('click', props.params.path)
+    FSStore.getYaDiskData(props.params.path)
+  } else {
+    window.open(props.params.public_url);
   }
 }
 
 function isDirectory(type: string) {
   return type === 'dir'
 }
+
+function getNestedStats() {
+  FSStore.getNestedStats(props.params.path)
+}
 </script>
 
 <style scoped lang="scss">
-.file-system {
-  margin-bottom: 100px;
+.file-system-item {
+  $self: &;
 
-  &__item {
-    display: flex;
-    gap: 5px;
-    flex-direction: column;
+  color: #fff;
+
+  &:hover,
+  &:focus-within {
+    #{$self}__actions {
+      opacity: 1;
+    }
   }
 
   &__name {
@@ -80,16 +98,33 @@ function isDirectory(type: string) {
     align-items: center;
     padding: 10px;
     gap: 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 50ms;
 
     &.is-directory {
-      background-color: #333;
       font-weight: 700;
-      cursor: pointer;
+    }
+
+    &:hover {
+      background-color: #606060;
+    }
+
+    &:focus-within {
+      background-color: #808080;
     }
   }
 
+  &__button {
+    padding: 3px 10px;
+    font-size: 12px;
+    font-weight: 400;
+  }
+
   &__type {
-    color: teal;
+    display: flex;
+    align-items: center;
+    width: 30px;
   }
 
   &__media-type {
@@ -115,6 +150,11 @@ function isDirectory(type: string) {
     position: relative;
     padding-left: 40px;
 
+  }
+
+  &__actions {
+    opacity: 0;
+    margin-left: auto;
   }
 }
 </style>
