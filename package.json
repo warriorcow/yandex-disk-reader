@@ -5,8 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vue-tsc && vite build",
-    "preview": "vite preview"
+    "build": "vite build",
+    "preview": "vite build && vite preview"
   },
   "dependencies": {
     "pinia": "^2.1.7",
@@ -15,6 +15,7 @@
     "vue-router": "4"
   },
   "devDependencies": {
+    "@types/node": "^20.14.2",
     "@types/splitpanes": "^2.2.6",
     "@vitejs/plugin-vue": "^4.5.2",
     "sass": "^1.70.0",

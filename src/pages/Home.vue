@@ -36,8 +36,6 @@ const sizePanel = computed(() => {
 })
 
 onMounted(async () => {
-  console.log(router)
-  console.log(route)
   FSStore.setSavedToken();
 })
 

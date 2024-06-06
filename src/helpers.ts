@@ -1,4 +1,4 @@
-export const getUniqueResolutions = (files: Array) => {
+export const getUniqueResolutions = (files) => {
     const resolutions = files.map(item => {
         if (item.type !== 'dir') {
                 const pattern = /(\d+[\.,]?\d*)([РP]?)[xх](\d+[\.,]?\d*)([РP]?)/;

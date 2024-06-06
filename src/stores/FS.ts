@@ -86,8 +86,8 @@ export const useFSStore = defineStore('FSStore', {
                         title: e.name,
                         status: "danger"
                     })
-                    throw new Error(e)
                 }
+                throw new Error(e)
             }
 
         },
