@@ -124,6 +124,7 @@ function getNestedStats() {
   &__type {
     display: flex;
     align-items: center;
+    min-width: 30px;
     width: 30px;
   }
 

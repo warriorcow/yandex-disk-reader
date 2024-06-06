@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
-import {getTypesFiles, getUniqueResolutions} from "../helpers";
+import { useToastStore } from './Toast';
+import { getTypesFiles, getUniqueResolutions } from "../helpers";
 
 export const useFSStore = defineStore('FSStore', {
     state: () => ({
@@ -9,7 +10,8 @@ export const useFSStore = defineStore('FSStore', {
         isLoadingFS: false,
         isLoadingNestedFiles: false,
         FSData: [],
-        nestedFiles: []
+        nestedFiles: [],
+        controller: new AbortController()
     }),
     getters: {
         getFolderName: (state) => state.currentPath.split('/').pop(),
@@ -64,27 +66,41 @@ export const useFSStore = defineStore('FSStore', {
                 limit: '2000',
                 path: folderParam === 'disk:' ? 'disk:/' : folderParam || 'disk:/'
             })
+            try {
+                const response = await fetch(`https://cloud-api.yandex.net/v1/disk/resources?${params}`, {
+                    headers: {
+                        'Authorization' : `OAuth ${this.token}`
+                    },
+                    signal: this.controller.signal
+                })
 
-            const response = await fetch(`https://cloud-api.yandex.net/v1/disk/resources?${params}`, {
-                headers: {
-                    'Authorization' : `OAuth ${this.token}`
-                },
-            })
+                const { _embedded } = await response.json();
 
-            const { _embedded, path } = await response.json();
-            console.log(path)
-            this.currentPath = path;
-            localStorage.setItem('folder', path);
-            return _embedded?.items;
-        },
-        setCurrentPath(path) {
-            this.currentPath = path;
+                return _embedded?.items;
+            } catch (e) {
+                const ToastStore = useToastStore();
+                if (e.name !== 'AbortError') {
+                    console.log(e)
+                    ToastStore.addToast({
+                        text: e.message,
+                        title: e.name,
+                        status: "danger"
+                    })
+                    throw new Error(e)
+                }
+            }
+
         },
         async getYaDiskData(folderParam: string): Promise<void> {
+            if (this.isLoadingFS) {
+                this.abortActiveFetches();
+            }
             this.FSData = [];
             this.nestedFiles = [];
             this.isLoadingFS = true;
             this.FSData = await this.getData(folderParam);
+            localStorage.setItem('folder', folderParam);
+            this.currentPath = folderParam;
             this.isLoadingFS = false;
         },
         async goBack() {
@@ -93,7 +109,26 @@ export const useFSStore = defineStore('FSStore', {
             this.getYaDiskData(currentPath.join('/'))
         },
         async getNestedStats(path: string) {
-            console.log('getNestedStats')
+            const ToastStore = useToastStore();
+            // Остановка запросов по повторном запросе, пока идут запросы
+            if (path === this.nestedFilesPath && this.isLoadingNestedFiles) {
+                this.clearNestedData();
+                this.abortActiveFetches();
+                this.isLoadingNestedFiles = false;
+                ToastStore.addToast({
+                    text: 'Отменено!',
+                    status: 'success'
+                })
+                return
+            }
+            // Остановка выполняемых запросов при другом запросе
+            if (this.isLoadingNestedFiles) {
+               this.abortActiveFetches();
+                ToastStore.addToast({
+                    text: 'Отменено!',
+                    status: 'success'
+                })
+            }
             this.isLoadingNestedFiles = true;
             this.nestedFilesPath = path;
             let files = [];
@@ -133,6 +168,15 @@ export const useFSStore = defineStore('FSStore', {
             localStorage.setItem('token', token);
             this.token = token;
             this.getYaDiskData(this.currentPath)
+        },
+        clearNestedData() {
+            // this.nestedFilesPath = '';
+            this.nestedFiles = [];
+            this.isLoadingNestedFiles = false;
+        },
+        abortActiveFetches() {
+            this.controller.abort();
+            this.controller = new AbortController();
         }
     }
 })

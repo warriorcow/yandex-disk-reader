@@ -8,14 +8,17 @@
             <div class="detail__folder-name">
               В папке <b>{{ FSStore.getNestedFolderName }}</b> и её вложенных папках лежат:
             </div>
-            <div class="detail__items">
-              <div
-                v-for="(item, key) in FSStore.getTypeFilesNestedFolders"
-                :key="key"
-                class="detail__item"
-              >
-                {{ key }}: <b>{{ item }}</b>
+            <div class="detail__group-items">
+              <div v-for="group in groupNestedTypes">
+                <div
+                  v-for="(item, key) in group"
+                  :key="key"
+                  class="detail__group-item"
+                >
+                  {{ key }}: <b>{{ item }}</b>
+                </div>
               </div>
+
             </div>
           </div>
           <div class="detail__folder-statistic">
@@ -34,7 +37,7 @@
                   <div class="detail__type-count">
                     {{ key }}: <b>{{value.length}}</b>
                   </div>
-                  <VCode>
+                  <VCode v-if="getUniqueResolutions(value)">
                     {{ getUniqueResolutions(value) }}
                   </VCode>
                 </div>
@@ -63,6 +66,26 @@ const FSStore = useFSStore();
 const hasNestedData = computed(() => {
   return Object.keys(FSStore.getFilteredNestedData).length
 })
+
+const groupNestedTypes = computed(() => {
+  function chunkObject(obj, chunkSize) {
+    const keys = Object.keys(obj);
+    const result = [];
+
+    for (let i = 0; i < keys.length; i += chunkSize) {
+      const chunk = keys.slice(i, i + chunkSize);
+      const chunkObject = chunk.reduce((acc, key) => {
+        acc[key] = obj[key];
+        return acc;
+      }, {});
+      result.push(chunkObject);
+    }
+
+    return result;
+  }
+
+  return chunkObject(FSStore.getTypeFilesNestedFolders, 3)
+})
 </script>
 
 <style scoped lang="scss">
@@ -81,6 +104,17 @@ const hasNestedData = computed(() => {
     display: flex;
     flex-direction: column;
     height: 100%;
+  }
+
+  &__group-items {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px 20px;
+    margin-top: 10px;
+  }
+
+  &__group-item {
+    font-size: 14px;
   }
 
   &__folder-name {
